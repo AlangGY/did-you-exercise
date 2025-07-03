@@ -22,7 +22,7 @@ export default function MainLayout({
           className="object-contain"
         />
       </div>
-      <div className="w-full max-w-md px-1 pt-36 pb-24">{children}</div>
+      <div className="w-full max-w-md px-3 pt-32 pb-24">{children}</div>
       <OverlayProvider />
       <TabBar />
     </div>

@@ -7,7 +7,7 @@ export default function BackNavBar({ title }: { title?: string }) {
   const router = useRouter();
 
   return (
-    <header className="w-full z-10 px-4 py-3 flex items-center">
+    <header className="w-full px-4 py-3 flex items-center">
       <button
         className="cursor-pointer text-gray-700"
         onClick={() => router.back()}

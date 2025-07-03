@@ -1,3 +1,5 @@
+import { ProfileScreen } from "@/components/screen/ProfileScreen";
+
 export default function ProfilePage() {
-  return <div>ProfilePage</div>;
+  return <ProfileScreen />;
 }

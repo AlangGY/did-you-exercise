@@ -21,7 +21,7 @@ export type JoinSessionFormValues = {
   notes: string;
 };
 
-export function useSessionJoinForm() {
+export function useSessionJoinForm(sessionId: number) {
   const form = useForm<JoinSessionFormValues>({
     defaultValues: {
       timesPerWeek: 3,

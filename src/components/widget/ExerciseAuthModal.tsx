@@ -1,5 +1,13 @@
 /* eslint-disable @next/next/no-img-element */
+import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   FormControl,
   FormField,
@@ -9,6 +17,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useExerciseAuth } from "@/hooks/useExerciseAuth";
+import { useSessionDetail } from "@/hooks/useSessionDetail";
 import { useState } from "react";
 import { FormProvider, useForm, useFormContext } from "react-hook-form";
 
@@ -19,7 +28,7 @@ interface ExerciseOption {
 
 interface ExerciseAuthModalProps {
   open: boolean;
-  exerciseOptions: ExerciseOption[];
+  sessionId: number;
   onClose: () => void;
 }
 
@@ -31,10 +40,11 @@ interface ExerciseAuthFormValues {
 
 export default function ExerciseAuthModal({
   open,
-  exerciseOptions,
+  sessionId,
   onClose,
 }: ExerciseAuthModalProps) {
   const { submitAuth } = useExerciseAuth();
+  const { myGoal } = useSessionDetail(sessionId);
   const [step, setStep] = useState<"form" | "done">("form");
   const [submitted, setSubmitted] = useState<{
     exercises: string[];
@@ -45,8 +55,6 @@ export default function ExerciseAuthModal({
   const methods = useForm<ExerciseAuthFormValues>({
     defaultValues: { photo: null, exercises: [], etc: "" },
   });
-
-  if (!open) return null;
 
   const handleSubmit = async (data: ExerciseAuthFormValues) => {
     setLoading(true);
@@ -69,26 +77,38 @@ export default function ExerciseAuthModal({
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      className="fixed inset-0 flex items-center justify-center bg-black/40 z-50"
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) handleClose();
+      }}
     >
-      <div className="bg-white rounded-lg p-6 w-full max-w-sm">
-        <FormProvider {...methods}>
-          {step === "form" ? (
-            <ExerciseAuthFormStep
-              exerciseOptions={exerciseOptions}
-              onSubmit={handleSubmit}
-              onClose={handleClose}
-              loading={loading}
-            />
-          ) : (
-            <ExerciseAuthDoneStep onClose={handleClose} submitted={submitted} />
-          )}
-        </FormProvider>
-      </div>
-    </div>
+      <DialogContent showCloseButton={false}>
+        <DialogHeader>
+          <DialogTitle>오늘 운동 인증</DialogTitle>
+        </DialogHeader>
+        <div className="p-6">
+          <FormProvider {...methods}>
+            {step === "form" ? (
+              <ExerciseAuthFormStep
+                exerciseOptions={myGoal.exercises.map((e) => ({
+                  label: e,
+                  value: e,
+                }))}
+                onSubmit={handleSubmit}
+                onClose={handleClose}
+                loading={loading}
+              />
+            ) : (
+              <ExerciseAuthDoneStep
+                onClose={handleClose}
+                submitted={submitted}
+              />
+            )}
+          </FormProvider>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -232,23 +252,22 @@ function ExerciseAuthFormStep({
           </FormItem>
         )}
       />
-      <div className="flex gap-2 mt-4">
-        <button
-          type="submit"
-          className="flex-1 py-2 rounded bg-primary text-white font-semibold"
-          disabled={loading}
-        >
-          인증하기
-        </button>
-        <button
-          type="button"
-          onClick={onClose}
-          className="flex-1 py-2 rounded bg-gray-200"
-          disabled={loading}
-        >
-          닫기
-        </button>
-      </div>
+      <DialogFooter>
+        <div className="flex gap-2">
+          <Button type="submit" className="flex-1" disabled={loading}>
+            인증하기
+          </Button>
+          <Button
+            type="button"
+            onClick={onClose}
+            className="flex-1"
+            variant="outline"
+            disabled={loading}
+          >
+            닫기
+          </Button>
+        </div>
+      </DialogFooter>
     </form>
   );
 }
@@ -288,20 +307,21 @@ function ExerciseAuthDoneStep({
           </div>
         )}
       </div>
-      <button
+      <Button
         type="button"
         onClick={handleKakaoShare}
         className="w-full py-2 rounded bg-[#FEE500] text-black font-semibold mb-2 border border-[#FEE500] hover:bg-[#ffe066] transition-colors"
       >
         카카오톡으로 공유하기
-      </button>
-      <button
+      </Button>
+      <Button
         type="button"
         onClick={onClose}
-        className="w-full py-2 rounded bg-primary text-white font-semibold"
+        variant="outline"
+        className="w-full"
       >
         닫기
-      </button>
+      </Button>
     </div>
   );
 }

@@ -15,7 +15,7 @@ export type SessionModel = SessionResponse & {
   isJoined: boolean;
 };
 
-export function useSessionList() {
+export function useJoinedSessionList() {
   // 본인 id(실제 서비스에서는 로그인 정보에서 가져와야 함)
   const myId = "user-1";
 

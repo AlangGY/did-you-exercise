@@ -1,16 +1,16 @@
 "use client";
 
+import PageLayout from "@/components/layout/PageLayout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { useSessionList } from "@/hooks/useSessionList";
+import { useNewSessionList } from "@/hooks/useNewSessionList";
 import Link from "next/link";
 
 export default function SessionListPage() {
-  const { sessions, myId } = useSessionList();
+  const { sessions, myId } = useNewSessionList();
 
   return (
-    <div className="w-full max-w-md mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6 text-gray-800">세션 목록</h1>
+    <PageLayout title="새로 열렸어요!">
       <div className="space-y-4">
         {sessions.map((session) => {
           const isJoined = session.participants.some((p) => p.id === myId);
@@ -47,6 +47,6 @@ export default function SessionListPage() {
           );
         })}
       </div>
-    </div>
+    </PageLayout>
   );
 }
