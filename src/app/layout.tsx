@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "운동해씀?",
     description: "운동 인증 서비스",
-    url: "https://easily.jojicompany.com",
+    url: "https://did-you-exercise.vercel.app",
     siteName: "운동해씀?",
     locale: "ko_KR",
     type: "website",
