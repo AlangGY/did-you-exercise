@@ -1,5 +1,6 @@
 import { Toaster } from "@/components/ui/sonner";
 import KakaoClient from "@/components/widget/KakaoClient";
+import { QueryClientProvider } from "@/components/widget/QueryClientProvider";
 import { cn } from "@/lib/utils";
 import type { Metadata, Viewport } from "next";
 import { Noto_Sans_KR } from "next/font/google";
@@ -78,7 +79,7 @@ export default function RootLayout({
           "min-h-dvh bg-background font-sans antialiased"
         )}
       >
-        {children}
+        <QueryClientProvider>{children}</QueryClientProvider>
         <Toaster richColors />
       </body>
     </html>

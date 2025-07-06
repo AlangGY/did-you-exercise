@@ -16,10 +16,10 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useAuth } from "@/hooks/useAuth";
+import { useSessionDetail } from "@/hooks/session-detail/useSessionDetail";
 import { useExerciseAuth } from "@/hooks/useExerciseAuth";
 import { useKakaoShare } from "@/hooks/useKakaoShare";
-import { useSessionDetail } from "@/hooks/useSessionDetail";
+import { User } from "@supabase/supabase-js";
 import { useState } from "react";
 import { FormProvider, useForm, useFormContext } from "react-hook-form";
 import { toast } from "sonner";
@@ -32,6 +32,7 @@ interface ExerciseOption {
 interface ExerciseAuthModalProps {
   open: boolean;
   sessionId: number;
+  user: User;
   onClose: () => void;
 }
 
@@ -44,11 +45,11 @@ interface ExerciseAuthFormValues {
 export default function ExerciseAuthModal({
   open,
   sessionId,
+  user,
   onClose,
 }: ExerciseAuthModalProps) {
-  const { user } = useAuth();
   const { submitAuth } = useExerciseAuth();
-  const { myGoal } = useSessionDetail(sessionId);
+  const { myGoal } = useSessionDetail(sessionId, user.id);
   const [step, setStep] = useState<"form" | "done">("form");
   const [submitted, setSubmitted] = useState<{
     exercises: string[];
@@ -112,15 +113,17 @@ export default function ExerciseAuthModal({
         <div className="p-6">
           <FormProvider {...methods}>
             {step === "form" ? (
-              <ExerciseAuthFormStep
-                exerciseOptions={myGoal.exercises.map((e) => ({
-                  label: e,
-                  value: e,
-                }))}
-                onSubmit={handleSubmit}
-                onClose={handleClose}
-                loading={loading}
-              />
+              myGoal && (
+                <ExerciseAuthFormStep
+                  exerciseOptions={myGoal.exercises.map((e) => ({
+                    label: e,
+                    value: e,
+                  }))}
+                  onSubmit={handleSubmit}
+                  onClose={handleClose}
+                  loading={loading}
+                />
+              )
             ) : (
               <ExerciseAuthDoneStep
                 onClose={handleClose}
@@ -307,6 +310,7 @@ function ExerciseAuthDoneStep({
   submitted: { exercises: string[]; photo: string | null };
   sessionId: number;
 }) {
+  console.log(submitted.photo);
   const handleKakaoShare = useKakaoShare({
     photoUrl: submitted.photo ? submitted.photo : undefined,
     exercises: submitted.exercises,

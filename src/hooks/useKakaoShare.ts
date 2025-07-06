@@ -22,7 +22,11 @@ export function useKakaoShare({
       content: {
         title: `${user.name} 운동 인증 완료!`,
         description: `오늘 운동 인증\n운동 종류: ${exercises.join(", ")}`,
-        imageUrl: photoUrl,
+        ...(photoUrl
+          ? {
+              imageUrl: photoUrl,
+            }
+          : {}),
         link: {
           webUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/auth/exercise/${sessionId}`,
         },

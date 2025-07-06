@@ -18,7 +18,7 @@ export function useExerciseAuth() {
       if (!user) {
         return { success: false, error: "로그인이 필요합니다." };
       }
-      let imageUrl: string | null = null;
+      let imageUrl: string | undefined = undefined;
       if (data.photo) {
         const filePath = `user-${user.id}/${Date.now()}`;
         const { data: uploadData, error: uploadError } = await supabase.storage
@@ -35,12 +35,15 @@ export function useExerciseAuth() {
           .getPublicUrl(uploadData.path);
         imageUrl = publicUrlData.publicUrl;
       }
+      const today = new Date().toLocaleDateString("ko-KR");
+      const [year, month, day] = today.split(".");
+
       const { data: insertData, error } = await supabase
         .from("exercise_auth")
         .insert({
           session_id: data.sessionId,
           user_id: user.id,
-          done_at: new Date().toISOString().slice(0, 10),
+          done_at: `${year.trim()}-${month.trim()}-${day.trim()}`,
           image: imageUrl,
           exercises: data.exercises,
           memo: data.memo ?? null,

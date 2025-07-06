@@ -1,3 +1,4 @@
+import { User } from "@supabase/supabase-js";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import ExerciseAuthModal from "./ExerciseAuthModal";
@@ -10,10 +11,17 @@ const EXERCISE_OPTIONS = [
 
 describe("ExerciseAuthModal", () => {
   it("모달이 열리면 운동 종류 체크박스와 사진 업로드 필드가 보인다", async () => {
+    const user = {
+      id: "user-1",
+      user_metadata: {
+        name: "김철수",
+      },
+    };
     render(
       <ExerciseAuthModal
         open
-        exerciseOptions={EXERCISE_OPTIONS}
+        sessionId={1}
+        user={user as unknown as User}
         onClose={() => {}}
       />
     );
