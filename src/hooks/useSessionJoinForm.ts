@@ -1,4 +1,8 @@
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { useAuth } from "./useAuth";
+import { useSupabaseClient } from "./useSupabaseClient";
 
 export const EXERCISE_OPTIONS = [
   { label: "런닝", value: "running" },
@@ -22,6 +26,7 @@ export type JoinSessionFormValues = {
 };
 
 export function useSessionJoinForm(sessionId: number) {
+  const router = useRouter();
   const form = useForm<JoinSessionFormValues>({
     defaultValues: {
       timesPerWeek: 3,
@@ -31,10 +36,16 @@ export function useSessionJoinForm(sessionId: number) {
       notes: "",
     },
   });
+  const supabase = useSupabaseClient();
+  const { user } = useAuth();
 
   const isEtcChecked = form.watch("exercises")?.includes("etc");
 
-  const onSubmit = (data: JoinSessionFormValues) => {
+  const onSubmit = async (data: JoinSessionFormValues) => {
+    if (!user) {
+      alert("로그인이 필요합니다.");
+      return;
+    }
     let exercisesFinal = data.exercises.filter((v) => v !== "etc");
     if (data.etcExercise) {
       const etcList = data.etcExercise
@@ -43,8 +54,23 @@ export function useSessionJoinForm(sessionId: number) {
         .filter(Boolean);
       exercisesFinal = [...exercisesFinal, ...etcList];
     }
-    alert(JSON.stringify({ ...data, exercises: exercisesFinal }, null, 2));
-    // 실제 참가 요청 처리 로직 추가
+
+    const { error } = await supabase.from("session_participant").insert({
+      session_id: sessionId,
+      user_id: user.id,
+      user_name: user.email, // 필요시 user.name 등으로 변경
+      times_per_week: data.timesPerWeek,
+      exercises: exercisesFinal,
+      penalty: data.penalty,
+      notes: data.notes,
+    });
+
+    if (error) {
+      toast.error("세션 참가에 실패했습니다: " + error.message);
+      return;
+    }
+    toast.success("세션에 참가하였습니다!");
+    router.push(`/session/${sessionId}`);
   };
 
   return {

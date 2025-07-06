@@ -1,66 +1,103 @@
+import { useEffect, useState } from "react";
+import { useAuth } from "./useAuth";
+import { useSupabaseClient } from "./useSupabaseClient";
+
 export type Participant = {
   id: string;
   name: string;
 };
 
-export type SessionResponse = {
+export type SessionModel = {
   id: number;
   title: string;
   from: string;
   to: string;
   participants: Participant[];
-};
-
-export type SessionModel = SessionResponse & {
   isJoined: boolean;
 };
 
 export function useNewSessionList() {
-  // 본인 id(실제 서비스에서는 로그인 정보에서 가져와야 함)
-  const myId = "user-1";
+  const supabase = useSupabaseClient();
+  const { user } = useAuth();
+  const [sessions, setSessions] = useState<SessionModel[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // 예시 데이터 (SessionResponse[])
-  const sessionResponses: SessionResponse[] = [
-    {
-      id: 1,
-      title: "6월",
-      from: "2025-06-01",
-      to: "2025-06-30",
-      participants: [
-        { id: "user-1", name: "김철수" },
-        { id: "user-2", name: "이영희" },
-        { id: "user-3", name: "박민수" },
-        { id: "user-4", name: "정수진" },
-      ],
-    },
-    {
-      id: 2,
-      title: "7월",
-      from: "2025-07-01",
-      to: "2025-07-31",
-      participants: [
-        { id: "user-1", name: "김철수" },
-        { id: "user-2", name: "이영희" },
-        { id: "user-3", name: "박민수" },
-      ],
-    },
-    {
-      id: 3,
-      title: "8월",
-      from: "2025-08-01",
-      to: "2025-08-31",
-      participants: [
-        { id: "user-2", name: "이영희" },
-        { id: "user-3", name: "박민수" },
-      ],
-    },
-  ];
+  useEffect(() => {
+    if (!user) {
+      setSessions([]);
+      setLoading(false);
+      return;
+    }
 
-  // SessionModel[]로 가공
-  const sessions: SessionModel[] = sessionResponses.map((session) => ({
-    ...session,
-    isJoined: session.participants.some((p) => p.id === myId),
-  }));
+    async function fetchSessions() {
+      setLoading(true);
+      // user가 null일 경우 보호
+      if (!user) {
+        setSessions([]);
+        setLoading(false);
+        return;
+      }
+      // 1. 내가 참가한 세션 id 목록 조회
+      const { data: joined, error: joinError } = await supabase
+        .from("session_participant")
+        .select("session_id")
+        .eq("user_id", user.id);
 
-  return { sessions, myId };
+      if (joinError || !joined) {
+        setSessions([]);
+        setLoading(false);
+        return;
+      }
+
+      const joinedSessionIds = joined.map((j) => j.session_id);
+
+      // 2. 내가 참가하지 않은 세션 조회
+      let query = supabase
+        .from("session")
+        .select(
+          "id, title, from, to, session_participant (user_id, user_name)"
+        );
+      if (joinedSessionIds.length > 0) {
+        query = query.not("id", "in", `(${joinedSessionIds.join(",")})`);
+      }
+      const { data: sessionsData, error: sessionError } = await query;
+
+      if (sessionError || !sessionsData) {
+        setSessions([]);
+        setLoading(false);
+        return;
+      }
+
+      // 3. 데이터 가공
+      const result: SessionModel[] = (sessionsData as unknown[]).map(
+        (session) => {
+          const s = session as {
+            id: number;
+            title: string;
+            from: string;
+            to: string;
+            session_participant?: unknown[];
+          };
+          return {
+            id: s.id,
+            title: s.title,
+            from: s.from,
+            to: s.to,
+            participants: (s.session_participant || []).map((p) => {
+              const part = p as { user_id: string; user_name: string };
+              return { id: part.user_id, name: part.user_name };
+            }),
+            isJoined: false,
+          };
+        }
+      );
+
+      setSessions(result);
+      setLoading(false);
+    }
+
+    fetchSessions();
+  }, [supabase, user]);
+
+  return { sessions, loading };
 }

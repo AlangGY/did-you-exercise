@@ -1,6 +1,5 @@
 "use client";
 
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -12,14 +11,12 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useSignupForm } from "@/hooks/useSignupForm";
-import { EyeIcon, EyeOffIcon, InfoIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { useState } from "react";
 
 export default function SignupPage() {
-  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
-  const { form, onSubmit, passwordRules, confirmPasswordRules } =
+  const { form, onSubmit, passwordRules, confirmPasswordRules, emailRules } =
     useSignupForm();
   const isFormValid = form.formState.isValid;
   const togglePasswordVisibility = () => setShowPassword((v) => !v);
@@ -33,6 +30,33 @@ export default function SignupPage() {
             onSubmit={form.handleSubmit(onSubmit)}
             className="space-y-6 mt-6"
           >
+            <FormField
+              control={form.control}
+              name="email"
+              rules={emailRules}
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-center">
+                    <FormLabel className="text-base font-medium text-gray-800">
+                      이메일
+                    </FormLabel>
+                    <span className="text-red-500 ml-1">*</span>
+                  </div>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      id="email"
+                      autoComplete="email"
+                      autoFocus
+                      placeholder="이메일을 입력하세요"
+                      className="w-full h-12 px-4 border border-gray-200 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="name"
@@ -128,15 +152,9 @@ export default function SignupPage() {
               )}
             />
 
-            <Alert>
-              <InfoIcon />
-              <AlertDescription>
-                회원가입 후 관리자 승인이 필요합니다. 승인 후에 로그인이
-                가능합니다.
-              </AlertDescription>
-            </Alert>
             <Button
               type="submit"
+              size="lg"
               disabled={!isFormValid}
               className={`w-full h-14 text-lg font-medium !rounded-button ${
                 isFormValid

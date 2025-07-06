@@ -1,3 +1,4 @@
+import ClientAuthGuard from "@/components/layout/ClientAuthGuard";
 import MainLayout from "@/components/layout/MainLayout";
 
 export default function HomeLayout({
@@ -5,5 +6,9 @@ export default function HomeLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <MainLayout key="main-layout">{children}</MainLayout>;
+  return (
+    <ClientAuthGuard>
+      <MainLayout key="main-layout">{children}</MainLayout>
+    </ClientAuthGuard>
+  );
 }

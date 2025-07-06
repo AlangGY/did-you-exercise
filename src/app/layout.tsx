@@ -1,3 +1,5 @@
+import { Toaster } from "@/components/ui/sonner";
+import KakaoClient from "@/components/widget/KakaoClient";
 import { cn } from "@/lib/utils";
 import type { Metadata, Viewport } from "next";
 import { Noto_Sans_KR } from "next/font/google";
@@ -69,6 +71,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko">
+      <KakaoClient />
       <body
         className={cn(
           fonts.className,
@@ -76,6 +79,7 @@ export default function RootLayout({
         )}
       >
         {children}
+        <Toaster richColors />
       </body>
     </html>
   );

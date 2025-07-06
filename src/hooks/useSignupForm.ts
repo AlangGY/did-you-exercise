@@ -1,14 +1,22 @@
+import { useRouter } from "next/navigation";
+import { useCallback } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { useSupabaseClient } from "./useSupabaseClient";
 
 export type SignupFormValues = {
+  email: string;
   name: string;
   password: string;
   confirmPassword: string;
 };
 
 export function useSignupForm() {
+  const router = useRouter();
+  const supabase = useSupabaseClient();
   const form = useForm<SignupFormValues>({
     defaultValues: {
+      email: "",
       name: "",
       password: "",
       confirmPassword: "",
@@ -16,10 +24,40 @@ export function useSignupForm() {
     mode: "onChange",
   });
 
-  const onSubmit: SubmitHandler<SignupFormValues> = (_data) => {
-    void _data;
-    alert("회원가입이 요청되었습니다. 관리자 승인 후 로그인이 가능합니다.");
-    // 실제 회원가입 처리 로직 추가
+  const handleSignup = useCallback(
+    async (data: SignupFormValues) => {
+      const response = await supabase.auth.signUp({
+        email: data.email,
+        options: {
+          data: {
+            name: data.name,
+          },
+        },
+        password: data.password,
+      });
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+    },
+    [supabase]
+  );
+
+  const onSubmit: SubmitHandler<SignupFormValues> = async (_data) => {
+    try {
+      await handleSignup(_data);
+      toast.success("회원가입이 완료되었습니다. 로그인 페이지로 이동합니다.");
+      router.push("/auth/login");
+    } catch (error) {
+      toast.error(`회원가입에 실패했습니다. ${error}`);
+    }
+  };
+
+  const emailRules = {
+    required: "이메일을 입력하세요",
+    pattern: {
+      value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+      message: "올바른 이메일 형식이 아닙니다.",
+    },
   };
 
   const passwordRules = {
@@ -41,5 +79,6 @@ export function useSignupForm() {
     onSubmit,
     passwordRules,
     confirmPasswordRules,
+    emailRules,
   };
 }

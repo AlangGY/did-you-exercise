@@ -96,7 +96,7 @@ export default function LoginPage() {
             variant="outline"
             className="w-full h-12 border-primary text-primary hover:bg-primary/10 font-medium !rounded-button"
           >
-            <Link href="/signup">회원가입</Link>
+            <Link href="/auth/signup">회원가입</Link>
           </Button>
         </div>
       </div>

@@ -16,10 +16,13 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/hooks/useAuth";
 import { useExerciseAuth } from "@/hooks/useExerciseAuth";
+import { useKakaoShare } from "@/hooks/useKakaoShare";
 import { useSessionDetail } from "@/hooks/useSessionDetail";
 import { useState } from "react";
 import { FormProvider, useForm, useFormContext } from "react-hook-form";
+import { toast } from "sonner";
 
 interface ExerciseOption {
   label: string;
@@ -43,12 +46,13 @@ export default function ExerciseAuthModal({
   sessionId,
   onClose,
 }: ExerciseAuthModalProps) {
+  const { user } = useAuth();
   const { submitAuth } = useExerciseAuth();
   const { myGoal } = useSessionDetail(sessionId);
   const [step, setStep] = useState<"form" | "done">("form");
   const [submitted, setSubmitted] = useState<{
     exercises: string[];
-    photo: File | null;
+    photo: string | null;
   }>({ exercises: [], photo: null });
   const [loading, setLoading] = useState(false);
 
@@ -62,10 +66,28 @@ export default function ExerciseAuthModal({
     if (data.exercises.includes("etc") && data.etc.trim()) {
       exercises = [...exercises, data.etc.trim()];
     }
-    await submitAuth({ photo: data.photo, exercises });
-    setSubmitted({ exercises, photo: data.photo });
-    setStep("done");
-    setLoading(false);
+    try {
+      const result = await submitAuth({
+        sessionId,
+        photo: data.photo,
+        exercises,
+        memo: "", // 필요시 메모 입력값 추가
+      });
+      if (result.error) {
+        throw new Error(result.error);
+      }
+      setSubmitted(
+        result.auth
+          ? { exercises: result.auth.exercises, photo: result.auth.imageUrl }
+          : { exercises, photo: null }
+      );
+      setStep("done");
+    } catch (error) {
+      console.error(error);
+      toast.error("인증 실패: " + error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleClose = () => {
@@ -102,7 +124,9 @@ export default function ExerciseAuthModal({
             ) : (
               <ExerciseAuthDoneStep
                 onClose={handleClose}
+                userName={user?.user_metadata.name}
                 submitted={submitted}
+                sessionId={sessionId}
               />
             )}
           </FormProvider>
@@ -274,15 +298,23 @@ function ExerciseAuthFormStep({
 
 function ExerciseAuthDoneStep({
   onClose,
+  userName,
   submitted,
+  sessionId,
 }: {
   onClose: () => void;
-  submitted: { exercises: string[]; photo: File | null };
+  userName: string;
+  submitted: { exercises: string[]; photo: string | null };
+  sessionId: number;
 }) {
-  // 카카오톡 공유 목 함수
-  const handleKakaoShare = () => {
-    alert("카카오톡 공유 기능은 추후 지원됩니다.");
-  };
+  const handleKakaoShare = useKakaoShare({
+    photoUrl: submitted.photo ? submitted.photo : undefined,
+    exercises: submitted.exercises,
+    sessionId,
+    user: {
+      name: userName,
+    },
+  });
   return (
     <div className="flex flex-col items-center justify-center min-h-[200px] w-full">
       <span className="text-2xl mb-4">🎉</span>
@@ -300,7 +332,7 @@ function ExerciseAuthDoneStep({
           <div className="mt-2">
             <span className="font-semibold text-sm block mb-1">인증 사진:</span>
             <img
-              src={URL.createObjectURL(submitted.photo)}
+              src={submitted.photo}
               alt="제출한 인증 사진"
               className="w-full max-h-40 object-contain rounded border"
             />
@@ -308,6 +340,7 @@ function ExerciseAuthDoneStep({
         )}
       </div>
       <Button
+        id="kakao-share-button"
         type="button"
         onClick={handleKakaoShare}
         className="w-full py-2 rounded bg-[#FEE500] text-black font-semibold mb-2 border border-[#FEE500] hover:bg-[#ffe066] transition-colors"
