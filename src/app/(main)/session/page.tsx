@@ -16,6 +16,14 @@ export default function SessionListPage() {
           return (
             <Card key={session.id} className="p-4 flex flex-col gap-2">
               <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-lg font-semibold flex items-center gap-2">
+                    {session.title}
+                  </h2>
+                  <p className="text-xs text-gray-400">
+                    {session.from} ~ {session.to}
+                  </p>
+                </div>
                 {session.isJoined ? (
                   <Button size="sm" variant="outline" asChild>
                     <Link href={`/session/${session.id}`}>상세보기</Link>
