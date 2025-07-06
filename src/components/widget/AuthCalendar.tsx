@@ -1,5 +1,5 @@
 import { Calendar, CalendarDayButton } from "@/components/ui/calendar";
-import type { AuthHistoryItem } from "@/hooks/useSessionDetail";
+import { AuthHistoryItem } from "@/hooks/session-detail/useMyAuthHistory";
 import { isSameDay, parseISO } from "date-fns";
 import * as React from "react";
 import { ko } from "react-day-picker/locale";
