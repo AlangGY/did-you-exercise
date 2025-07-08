@@ -5,7 +5,11 @@ declare global {
       isInitialized: () => boolean;
       cleanup: () => void;
       Auth: {
-        authorize: (options: { redirectUri: string }) => void;
+        authorize: (options: {
+          redirectUri: string;
+          state?: string;
+          scope?: string;
+        }) => void;
       };
       Share: {
         cleanup: () => void;
