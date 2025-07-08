@@ -9,7 +9,7 @@ export function KakaoLoginButton() {
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: "kakao",
           options: {
-            redirectTo: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/callback`,
+            redirectTo: `${process.env.NEXT_PUBLIC_BASE_URL}`,
             queryParams: {
               scope: "profile_nickname account_email openid",
             },
