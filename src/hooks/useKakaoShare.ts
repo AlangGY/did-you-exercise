@@ -28,7 +28,7 @@ export function useKakaoShare({
             }
           : {}),
         link: {
-          webUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/auth/exercise/${sessionId}`,
+          webUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/session/${sessionId}`,
         },
       },
       // 프로필 이미지 등 추가 정보는 카카오톡 API의 feed message profile 영역에 맞게 확장 가능
