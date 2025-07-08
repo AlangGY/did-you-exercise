@@ -12,7 +12,7 @@ export function LoginScreen() {
       <div className="w-full max-w-md px-6 pt-34 pb-24">
         <div className="flex justify-center">
           <Image
-            src="/logo.png"
+            src="/logo.svg"
             alt="logo"
             className="h-24 w-auto"
             width={100}

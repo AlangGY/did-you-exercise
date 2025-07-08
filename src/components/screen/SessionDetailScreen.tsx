@@ -54,7 +54,7 @@ export default function SessionDetailScreen({
           <h3 className="text-base font-semibold mt-4 mb-2">
             이번 주 운동 현황
           </h3>
-          {thisWeekCount && myGoal && (
+          {thisWeekCount !== undefined && myGoal && (
             <div className="flex items-center gap-2 mt-4">
               <span className="text-xs text-gray-500">{thisWeekCount}회</span>
               <ProgressGradient
