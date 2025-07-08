@@ -69,7 +69,7 @@ export default function SessionDetailScreen({
 
           {/* 운동 인증 달력 */}
           {myAuthHistory && (
-            <div className="mt-8">
+            <div className="mt-8 mb-8">
               <h4 className="text-sm font-semibold mb-2">운동 인증 현황</h4>
               <AuthCalendar authHistory={myAuthHistory} />
             </div>
