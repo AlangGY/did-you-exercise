@@ -11,6 +11,7 @@ import AuthCalendar from "@/components/widget/AuthCalendar";
 import ExerciseAuthModal from "@/components/widget/ExerciseAuthModal";
 import { useSessionDetail } from "@/hooks/session-detail/useSessionDetail";
 import { useAuth } from "@/hooks/useAuth";
+import Link from "next/link";
 import { overlay } from "overlay-kit";
 import { Fragment } from "react";
 
@@ -126,7 +127,14 @@ export default function SessionDetailScreen({
           <Separator className="my-12" />
           {/* 참가자별 운동일 프로그래스바 */}
           <div className="space-y-4 mt-12">
-            <h3 className="text-base font-semibold mb-2">운동 현황</h3>
+            <div className="flex justify-between items-center">
+              <h3 className="text-base font-semibold mb-2">참가자 운동 현황</h3>
+              <Button variant="outline" size="sm" asChild>
+                <Link href={`/session/${sessionId}/participants`}>
+                  자세히 보기
+                </Link>
+              </Button>
+            </div>
             {participants?.map((p) => (
               <Fragment key={p.id}>
                 <div className="flex justify-between items-center mb-2">

@@ -35,15 +35,23 @@ export function useExerciseAuth() {
           .getPublicUrl(uploadData.path);
         imageUrl = publicUrlData.publicUrl;
       }
-      const today = new Date().toLocaleDateString("ko-KR");
-      const [year, month, day] = today.split(".");
+      // 자정~4시 이전 인증은 done_at을 하루 전 날짜로 저장
+      const now = new Date();
+      const doneDate = new Date(now);
+      if (now.getHours() < 4) {
+        doneDate.setDate(doneDate.getDate() - 1);
+      }
+      const year = doneDate.getFullYear();
+      const month = String(doneDate.getMonth() + 1).padStart(2, "0");
+      const day = String(doneDate.getDate()).padStart(2, "0");
+      const doneAt = `${year}-${month}-${day}`;
 
       const { data: insertData, error } = await supabase
         .from("exercise_auth")
         .insert({
           session_id: data.sessionId,
           user_id: user.id,
-          done_at: `${year.trim()}-${month.trim()}-${day.trim()}`,
+          done_at: doneAt,
           image: imageUrl,
           exercises: data.exercises,
           memo: data.memo ?? null,
