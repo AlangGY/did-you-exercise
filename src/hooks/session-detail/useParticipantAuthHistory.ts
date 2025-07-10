@@ -3,7 +3,7 @@ import { useSupabaseClient } from "../useSupabaseClient";
 
 export type ParticipantAuthHistoryItem = {
   doneAt: string; // YYYY-MM-DD
-  image: string; // 이미지 URL
+  image: string[]; // 이미지 URL 배열
   exercises: string[];
   memo?: string;
 };
@@ -37,7 +37,7 @@ export function useParticipantAuthHistory(
           memo?: string;
         }) => ({
           doneAt: row.done_at,
-          image: row.image,
+          image: row.image ? row.image.split(",").filter(Boolean) : [],
           exercises: row.exercises,
           memo: row.memo,
         })

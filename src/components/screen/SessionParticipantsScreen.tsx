@@ -263,14 +263,19 @@ export function SessionParticipantsScreen({
                       className="p-4 flex flex-col items-center gap-2"
                     >
                       <div className="text-xs text-gray-500">{item.doneAt}</div>
-                      {item.image && (
-                        <Image
-                          src={item.image}
-                          width={192}
-                          height={192}
-                          alt="운동 인증 이미지"
-                          className="w-48 h-48 object-cover rounded border"
-                        />
+                      {item.image && item.image.length > 0 && (
+                        <div className="flex gap-2 flex-wrap justify-center">
+                          {item.image.map((imgUrl, imgIdx) => (
+                            <Image
+                              key={imgIdx}
+                              src={imgUrl}
+                              width={192}
+                              height={192}
+                              alt="운동 인증 이미지"
+                              className="w-48 h-48 object-cover rounded border"
+                            />
+                          ))}
+                        </div>
                       )}
                       <div className="text-sm font-medium">
                         {item.exercises?.join(", ")}

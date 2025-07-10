@@ -37,7 +37,7 @@ interface ExerciseAuthModalProps {
 }
 
 interface ExerciseAuthFormValues {
-  photo: File | null;
+  photo: FileList | null;
   exercises: string[];
   etc: string;
   memo: string;
@@ -54,7 +54,7 @@ export default function ExerciseAuthModal({
   const [step, setStep] = useState<"form" | "done">("form");
   const [submitted, setSubmitted] = useState<{
     exercises: string[];
-    photo: string | null;
+    photo: string[] | null;
     memo: string;
   }>({ exercises: [], photo: null, memo: "" });
   const [loading, setLoading] = useState(false);
@@ -72,7 +72,7 @@ export default function ExerciseAuthModal({
     try {
       const result = await submitAuth({
         sessionId,
-        photo: data.photo,
+        photo: data.photo ? Array.from(data.photo) : [],
         exercises,
         memo: data.memo,
       });
@@ -83,10 +83,10 @@ export default function ExerciseAuthModal({
         result.auth
           ? {
               exercises: result.auth.exercises,
-              photo: result.auth.imageUrl,
+              photo: result.auth.imageUrls,
               memo: result.auth.memo,
             }
-          : { exercises, photo: null, memo: data.memo }
+          : { exercises, photo: [], memo: data.memo }
       );
       setStep("done");
     } catch (error) {
@@ -158,7 +158,8 @@ function ExerciseAuthFormStep({
 }) {
   const { control, handleSubmit, watch } =
     useFormContext<ExerciseAuthFormValues>();
-  const photo = watch("photo");
+  const photoList = watch("photo") as FileList | null;
+  const photo: File[] = photoList ? Array.from(photoList) : [];
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
@@ -173,19 +174,22 @@ function ExerciseAuthFormStep({
               <Input
                 type="file"
                 accept="image/*"
+                multiple
                 onChange={(e) => {
-                  const file = e.target.files?.[0] ?? null;
-                  field.onChange(file);
+                  field.onChange(e.target.files);
                 }}
               />
             </FormControl>
-            {photo && (
-              <div className="mt-2">
-                <img
-                  src={URL.createObjectURL(photo)}
-                  alt="미리보기"
-                  className="w-full max-h-40 object-contain rounded border"
-                />
+            {photo && photo.length > 0 && (
+              <div className="mt-2 flex gap-2 flex-wrap">
+                {photo.map((file, idx) => (
+                  <img
+                    key={idx}
+                    src={URL.createObjectURL(file)}
+                    alt="미리보기"
+                    className="w-24 h-24 object-contain rounded border"
+                  />
+                ))}
               </div>
             )}
           </FormItem>
@@ -325,12 +329,14 @@ function ExerciseAuthDoneStep({
 }: {
   onClose: () => void;
   userName: string;
-  submitted: { exercises: string[]; photo: string | null; memo: string };
+  submitted: { exercises: string[]; photo: string[] | null; memo: string };
   sessionId: number;
 }) {
-  console.log(submitted.photo);
   const handleKakaoShare = useKakaoShare({
-    photoUrl: submitted.photo ? submitted.photo : undefined,
+    photoUrl:
+      submitted.photo && submitted.photo.length > 0
+        ? submitted.photo[0]
+        : undefined,
     exercises: submitted.exercises,
     memo: submitted.memo,
     sessionId,
@@ -351,14 +357,19 @@ function ExerciseAuthDoneStep({
             ))}
           </ul>
         </div>
-        {submitted.photo && (
+        {submitted.photo && submitted.photo.length > 0 && (
           <div className="mt-2">
             <span className="font-semibold text-sm block mb-1">인증 사진:</span>
-            <img
-              src={submitted.photo}
-              alt="제출한 인증 사진"
-              className="w-full max-h-40 object-contain rounded border"
-            />
+            <div className="flex gap-2 flex-wrap">
+              {submitted.photo.map((url, idx) => (
+                <img
+                  key={idx}
+                  src={url}
+                  alt="제출한 인증 사진"
+                  className="w-24 h-24 object-contain rounded border"
+                />
+              ))}
+            </div>
           </div>
         )}
         {submitted.memo && (
