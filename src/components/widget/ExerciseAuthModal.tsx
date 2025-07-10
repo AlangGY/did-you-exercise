@@ -40,6 +40,7 @@ interface ExerciseAuthFormValues {
   photo: File | null;
   exercises: string[];
   etc: string;
+  memo: string;
 }
 
 export default function ExerciseAuthModal({
@@ -54,11 +55,12 @@ export default function ExerciseAuthModal({
   const [submitted, setSubmitted] = useState<{
     exercises: string[];
     photo: string | null;
-  }>({ exercises: [], photo: null });
+    memo: string;
+  }>({ exercises: [], photo: null, memo: "" });
   const [loading, setLoading] = useState(false);
 
   const methods = useForm<ExerciseAuthFormValues>({
-    defaultValues: { photo: null, exercises: [], etc: "" },
+    defaultValues: { photo: null, exercises: [], etc: "", memo: "" },
   });
 
   const handleSubmit = async (data: ExerciseAuthFormValues) => {
@@ -72,15 +74,19 @@ export default function ExerciseAuthModal({
         sessionId,
         photo: data.photo,
         exercises,
-        memo: "", // 필요시 메모 입력값 추가
+        memo: data.memo,
       });
       if (result.error) {
         throw new Error(result.error);
       }
       setSubmitted(
         result.auth
-          ? { exercises: result.auth.exercises, photo: result.auth.imageUrl }
-          : { exercises, photo: null }
+          ? {
+              exercises: result.auth.exercises,
+              photo: result.auth.imageUrl,
+              memo: result.auth.memo,
+            }
+          : { exercises, photo: null, memo: data.memo }
       );
       setStep("done");
     } catch (error) {
@@ -93,7 +99,7 @@ export default function ExerciseAuthModal({
 
   const handleClose = () => {
     setStep("form");
-    setSubmitted({ exercises: [], photo: null });
+    setSubmitted({ exercises: [], photo: null, memo: "" });
     methods.reset();
     setLoading(false);
     onClose();
@@ -279,6 +285,18 @@ function ExerciseAuthFormStep({
           </FormItem>
         )}
       />
+      <FormField
+        control={control}
+        name="memo"
+        render={({ field }) => (
+          <FormItem className="mb-4">
+            <FormLabel>메모</FormLabel>
+            <FormControl>
+              <Input {...field} />
+            </FormControl>
+          </FormItem>
+        )}
+      />
       <DialogFooter>
         <div className="flex gap-2">
           <Button type="submit" className="flex-1" disabled={loading}>
@@ -307,13 +325,14 @@ function ExerciseAuthDoneStep({
 }: {
   onClose: () => void;
   userName: string;
-  submitted: { exercises: string[]; photo: string | null };
+  submitted: { exercises: string[]; photo: string | null; memo: string };
   sessionId: number;
 }) {
   console.log(submitted.photo);
   const handleKakaoShare = useKakaoShare({
     photoUrl: submitted.photo ? submitted.photo : undefined,
     exercises: submitted.exercises,
+    memo: submitted.memo,
     sessionId,
     user: {
       name: userName,
@@ -340,6 +359,12 @@ function ExerciseAuthDoneStep({
               alt="제출한 인증 사진"
               className="w-full max-h-40 object-contain rounded border"
             />
+          </div>
+        )}
+        {submitted.memo && (
+          <div className="mt-2">
+            <span className="font-semibold text-sm block mb-1">메모:</span>
+            <div className="text-sm">{submitted.memo}</div>
           </div>
         )}
       </div>

@@ -66,6 +66,7 @@ export function useExerciseAuth() {
         auth: {
           exercises: insertData?.exercises ?? data.exercises,
           imageUrl: insertData?.image ?? imageUrl,
+          memo: insertData?.memo ?? data.memo,
         },
       };
     },
