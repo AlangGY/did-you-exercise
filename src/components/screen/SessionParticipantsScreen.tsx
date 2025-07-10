@@ -1,11 +1,20 @@
 "use client";
 
 import BackNavBar from "@/components/layout/BackNavBar";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 import { KakaoShareButton } from "@/components/widget/KakaoShareButton";
+import { useParticipantAuthHistory } from "@/hooks/session-detail/useParticipantAuthHistory";
 import { useSessionParticipantsStatus } from "@/hooks/session-detail/useSessionParticipantsStatus";
 import { useSessionWeeks } from "@/hooks/session-detail/useSessionWeeks";
 import { format, isWithinInterval, parseISO } from "date-fns";
 import { CheckIcon, XIcon } from "lucide-react";
+import Image from "next/image";
 import { useState } from "react";
 
 const days = ["월", "화", "수", "목", "금", "토", "일"];
@@ -51,6 +60,20 @@ export function SessionParticipantsScreen({
     start: parseISO(weekStart),
     end: parseISO(weekEnd),
   });
+
+  // 참가자 캐러셀용 state
+  const [selectedUserId, setSelectedUserId] = useState<string | undefined>(
+    undefined
+  );
+  // participants가 바뀌면 자동으로 첫 번째 참가자 선택
+  if (!selectedUserId && participants && participants.length > 0) {
+    setSelectedUserId(participants[0].id);
+  }
+  const {
+    data: authHistory,
+    isLoading: authLoading,
+    error: authError,
+  } = useParticipantAuthHistory(sessionId, selectedUserId, weekStart, weekEnd);
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedWeek(e.target.value);
@@ -122,90 +145,154 @@ export function SessionParticipantsScreen({
           데이터를 불러오지 못했습니다.
         </div>
       ) : (
-        <table className="min-w-full border text-center">
-          <thead>
-            <tr>
-              <th className="border px-2 py-1">이름</th>
-              {days.map((day) => (
-                <th key={day} className="border px-2 py-1">
-                  {day}
-                </th>
-              ))}
-              <th className="border px-2 py-1">목표 달성</th>
-              <th className="border px-2 py-1">벌금</th>
-            </tr>
-          </thead>
-          <tbody>
-            {participants && participants.length > 0 ? (
-              participants.map((p) => (
-                <tr key={p.id}>
-                  <td className="border px-2 py-1 font-medium">{p.name}</td>
-                  {p.authPerDay.map((didAuth, idx) => {
-                    // weekStart 기준 idx번째 요일의 날짜 계산
-                    const cellDate = format(
-                      new Date(
-                        new Date(weekStart).getTime() +
-                          idx * 24 * 60 * 60 * 1000
-                      ),
-                      "yyyy-MM-dd"
-                    );
-                    const today = format(new Date(), "yyyy-MM-dd");
-                    if (cellDate >= today && !didAuth) {
+        <>
+          <table className="min-w-full border text-center">
+            <thead>
+              <tr>
+                <th className="border px-2 py-1">이름</th>
+                {days.map((day) => (
+                  <th key={day} className="border px-2 py-1">
+                    {day}
+                  </th>
+                ))}
+                <th className="border px-2 py-1">목표 달성</th>
+                <th className="border px-2 py-1">벌금</th>
+              </tr>
+            </thead>
+            <tbody>
+              {participants && participants.length > 0 ? (
+                participants.map((p) => (
+                  <tr key={p.id}>
+                    <td className="border px-2 py-1 font-medium">{p.name}</td>
+                    {p.authPerDay.map((didAuth, idx) => {
+                      // weekStart 기준 idx번째 요일의 날짜 계산
+                      const cellDate = format(
+                        new Date(
+                          new Date(weekStart).getTime() +
+                            idx * 24 * 60 * 60 * 1000
+                        ),
+                        "yyyy-MM-dd"
+                      );
+                      const today = format(new Date(), "yyyy-MM-dd");
+                      if (cellDate >= today && !didAuth) {
+                        return (
+                          <td
+                            key={idx}
+                            className="border px-2 py-1 text-gray-400"
+                          >
+                            -
+                          </td>
+                        );
+                      }
                       return (
-                        <td
-                          key={idx}
-                          className="border px-2 py-1 text-gray-400"
-                        >
-                          -
+                        <td key={idx} className="border px-2 py-1">
+                          {didAuth ? (
+                            <CheckIcon className="w-4 h-4 text-green-500" />
+                          ) : (
+                            <XIcon className="w-4 h-4 text-red-500" />
+                          )}
                         </td>
                       );
-                    }
-                    return (
-                      <td key={idx} className="border px-2 py-1">
-                        {didAuth ? (
-                          <CheckIcon className="w-4 h-4 text-green-500" />
-                        ) : (
-                          <XIcon className="w-4 h-4 text-red-500" />
-                        )}
-                      </td>
-                    );
-                  })}
-                  <td className="border px-2 py-1 font-semibold">
-                    <div className="flex flex-col items-center gap-1">
-                      <span className="text-sm">
-                        {p.done}/{p.goal}
-                      </span>
-                      <span
-                        className="text-xs"
-                        style={{
-                          color:
-                            p.success === "성공"
-                              ? "green"
-                              : p.success === "실패"
-                              ? "red"
-                              : "gray",
-                        }}
-                      >
-                        {p.success}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="border px-2 py-1 font-semibold">
-                    {p.success === "실패" && p.fine > 0
-                      ? `${p.fine.toLocaleString()}원`
-                      : "-"}
+                    })}
+                    <td className="border px-2 py-1 font-semibold">
+                      <div className="flex flex-col items-center gap-1">
+                        <span className="text-sm">
+                          {p.done}/{p.goal}
+                        </span>
+                        <span
+                          className="text-xs"
+                          style={{
+                            color:
+                              p.success === "성공"
+                                ? "green"
+                                : p.success === "실패"
+                                ? "red"
+                                : "gray",
+                          }}
+                        >
+                          {p.success}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="border px-2 py-1 font-semibold">
+                      {p.success === "실패" && p.fine > 0
+                        ? `${p.fine.toLocaleString()}원`
+                        : "-"}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={days.length + 3} className="py-8 text-gray-400">
+                    참가자가 없습니다.
                   </td>
                 </tr>
-              ))
+              )}
+            </tbody>
+          </table>
+          {/* 참가자별 인증 이력 캐러셀 */}
+          <div className="mt-8">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="font-semibold">참가자 인증 이력</span>
+              <select
+                className="border rounded px-2 py-1 text-sm"
+                value={selectedUserId}
+                onChange={(e) => setSelectedUserId(e.target.value)}
+              >
+                {participants?.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {authLoading ? (
+              <div className="py-4 text-center text-gray-400">
+                이력 불러오는 중...
+              </div>
+            ) : authError ? (
+              <div className="py-4 text-center text-red-400">
+                이력 조회 실패
+              </div>
+            ) : authHistory && authHistory.length > 0 ? (
+              <Carousel className="">
+                <CarouselContent>
+                  {authHistory.map((item, idx) => (
+                    <CarouselItem
+                      key={idx}
+                      className="p-4 flex flex-col items-center gap-2"
+                    >
+                      <div className="text-xs text-gray-500">{item.doneAt}</div>
+                      {item.image && (
+                        <Image
+                          src={item.image}
+                          width={192}
+                          height={192}
+                          alt="운동 인증 이미지"
+                          className="w-48 h-48 object-cover rounded border"
+                        />
+                      )}
+                      <div className="text-sm font-medium">
+                        {item.exercises?.join(", ")}
+                      </div>
+                      {item.memo && (
+                        <div className="text-xs text-gray-400">
+                          메모: {item.memo}
+                        </div>
+                      )}
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                <CarouselPrevious />
+                <CarouselNext />
+              </Carousel>
             ) : (
-              <tr>
-                <td colSpan={days.length + 3} className="py-8 text-gray-400">
-                  참가자가 없습니다.
-                </td>
-              </tr>
+              <div className="py-4 text-center text-gray-400">
+                인증 이력이 없습니다.
+              </div>
             )}
-          </tbody>
-        </table>
+          </div>
+        </>
       )}
     </div>
   );
