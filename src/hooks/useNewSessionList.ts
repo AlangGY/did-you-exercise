@@ -14,6 +14,7 @@ export type SessionModel = {
   to: string;
   participants: Participant[];
   isJoined: boolean;
+  isEnded: boolean;
 };
 
 export function useNewSessionList() {
@@ -88,6 +89,7 @@ export function useNewSessionList() {
               return { id: part.user_id, name: part.user_name };
             }),
             isJoined: false,
+            isEnded: new Date(s.to) < new Date(),
           };
         }
       );

@@ -21,7 +21,7 @@ export default function SessionDetailScreen({
   sessionId: number;
 }) {
   const { user } = useAuth();
-  const { myGoal, myAuthHistory, participants, thisWeekCount } =
+  const { myGoal, myAuthHistory, participants, thisWeekCount, isEnded } =
     useSessionDetail(sessionId, user?.id);
   return (
     <PageLayout>
@@ -30,7 +30,7 @@ export default function SessionDetailScreen({
         <CardHeader>
           <div className="flex items-center justify-between">
             <BackNavBar />
-            {user && (
+            {user && !isEnded && (
               <Button
                 type="button"
                 onClick={() => {
@@ -48,6 +48,9 @@ export default function SessionDetailScreen({
               >
                 오늘 운동 인증
               </Button>
+            )}
+            {isEnded && (
+              <p className="text-sm text-gray-500 italic">종료된 세션입니다</p>
             )}
           </div>
         </CardHeader>

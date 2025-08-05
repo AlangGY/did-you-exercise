@@ -33,10 +33,11 @@ export function SessionParticipantsScreen({
   week?: string;
 }) {
   const {
-    data: weekRanges = [],
+    data: { weeks: weekRanges } = { weeks: [], isEnded: false },
     isLoading: weeksLoading,
     error: weeksError,
   } = useSessionWeeks(sessionId);
+
   // 금주까지만 필터링
 
   const [selectedWeek, setSelectedWeek] = useState<string | undefined>(

@@ -14,6 +14,7 @@ export type SessionModel = {
   to: string;
   participants: Participant[];
   isJoined: boolean;
+  isEnded: boolean;
 };
 
 export function useJoinedSessionList() {
@@ -89,9 +90,15 @@ export function useJoinedSessionList() {
               return { id: part.user_id, name: part.user_name };
             }),
             isJoined: true,
+            isEnded: new Date(s.to) < new Date(),
           };
         }
       );
+      result.sort((a, b) => {
+        if (a.isEnded && !b.isEnded) return 1;
+        if (!a.isEnded && b.isEnded) return -1;
+        return 0;
+      });
 
       setSessions(result);
       setLoading(false);

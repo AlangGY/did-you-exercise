@@ -14,7 +14,7 @@ import { useSupabaseClient } from "../useSupabaseClient";
 export function useSessionWeeks(sessionId: number) {
   const supabase = useSupabaseClient();
 
-  return useQuery<string[]>({
+  return useQuery<{ weeks: string[]; isEnded: boolean }>({
     queryKey: ["sessionWeeks", sessionId],
     queryFn: async () => {
       // 1. session 테이블에서 from, to 조회
@@ -24,7 +24,7 @@ export function useSessionWeeks(sessionId: number) {
         .eq("id", sessionId)
         .single();
       if (error) throw error;
-      if (!data) return [];
+      if (!data) return { weeks: [], isEnded: false };
       const fromDate = parseISO(data.from);
       const toDate = parseISO(data.to);
       const today = format(new Date(), "yyyy-MM-dd");
@@ -48,7 +48,7 @@ export function useSessionWeeks(sessionId: number) {
         }
         cursor = addDays(weekEnd, 1);
       }
-      return weeks;
+      return { weeks, isEnded: isBefore(toDate, new Date()) };
     },
   });
 }
