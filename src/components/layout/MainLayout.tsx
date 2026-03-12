@@ -8,21 +8,20 @@ export default function MainLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const logoUrl = "/logo.svg";
   return (
-    <div className="flex flex-col items-center min-h-screen bg-gray-50">
-      {/* Nav bar */}
-      <div className="fixed top-0 w-full bg-white shadow-sm px-6 z-10 h-28 flex">
-        <h2 className="sr-only">운동해씀?</h2>
+    <div className="flex flex-col items-center min-h-screen bg-background">
+      {/* Compact header */}
+      <header className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-border/50 px-4 z-10 h-14 flex items-center">
         <Image
-          src={logoUrl}
+          src="/logo.svg"
           alt="운동해씀?"
-          width={96}
-          height={96}
-          className="object-contain"
+          width={80}
+          height={40}
+          className="h-9 w-auto object-contain"
         />
-      </div>
-      <div className="w-full max-w-md px-3 pt-32 pb-24">{children}</div>
+        <h2 className="sr-only">운동해씀?</h2>
+      </header>
+      <main className="w-full max-w-md px-4 pt-18 pb-22">{children}</main>
       <OverlayProvider />
       <TabBar />
     </div>

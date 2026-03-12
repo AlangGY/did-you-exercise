@@ -1,6 +1,9 @@
 "use client";
 
 import BackNavBar from "@/components/layout/BackNavBar";
+import PageLayout from "@/components/layout/PageLayout";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Carousel,
   CarouselContent,
@@ -13,14 +16,19 @@ import { useParticipantAuthHistory } from "@/hooks/session-detail/useParticipant
 import { useSessionParticipantsStatus } from "@/hooks/session-detail/useSessionParticipantsStatus";
 import { useSessionWeeks } from "@/hooks/session-detail/useSessionWeeks";
 import { format, isWithinInterval, parseISO } from "date-fns";
-import { CheckIcon, XIcon } from "lucide-react";
+import {
+  CalendarDaysIcon,
+  CheckCircle2Icon,
+  ChevronDownIcon,
+  ImageIcon,
+  XCircleIcon,
+} from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 
 const days = ["월", "화", "수", "목", "금", "토", "일"];
 
 function parseWeekRange(weekRange: string) {
-  // "YYYY-MM-DD ~ YYYY-MM-DD" -> { weekStart, weekEnd }
   const [weekStart, weekEnd] = weekRange.split(" ~ ");
   return { weekStart, weekEnd };
 }
@@ -38,13 +46,9 @@ export function SessionParticipantsScreen({
     error: weeksError,
   } = useSessionWeeks(sessionId);
 
-  // 금주까지만 필터링
-
   const [selectedWeek, setSelectedWeek] = useState<string | undefined>(
     week ?? undefined
   );
-  // weekRanges가 바뀌면 자동으로 마지막(금주)로 선택
-  // (최초 렌더링 시에도 적용)
   if (!selectedWeek && weekRanges.length > 0) {
     setSelectedWeek(weekRanges[weekRanges.length - 1]);
   }
@@ -57,16 +61,17 @@ export function SessionParticipantsScreen({
     isLoading,
     error,
   } = useSessionParticipantsStatus(sessionId, weekStart, weekEnd);
-  const isTodayInWeek = isWithinInterval(new Date(), {
-    start: parseISO(weekStart),
-    end: parseISO(weekEnd),
-  });
+  const isTodayInWeek =
+    weekStart &&
+    weekEnd &&
+    isWithinInterval(new Date(), {
+      start: parseISO(weekStart),
+      end: parseISO(weekEnd),
+    });
 
-  // 참가자 캐러셀용 state
   const [selectedUserId, setSelectedUserId] = useState<string | undefined>(
     undefined
   );
-  // participants가 바뀌면 자동으로 첫 번째 참가자 선택
   if (!selectedUserId && participants && participants.length > 0) {
     setSelectedUserId(participants[0].id);
   }
@@ -75,10 +80,6 @@ export function SessionParticipantsScreen({
     isLoading: authLoading,
     error: authError,
   } = useParticipantAuthHistory(sessionId, selectedUserId, weekStart, weekEnd);
-
-  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedWeek(e.target.value);
-  };
 
   const handleShare = () => {
     const isEveryBodySuccess = participants?.every((p) => p.success === "성공");
@@ -97,7 +98,6 @@ export function SessionParticipantsScreen({
     window.Kakao.Share.sendDefault({
       objectType: "text",
       text: `${weekStart} ~ ${weekEnd}\n${description}\n`,
-
       link: {
         webUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/session/${sessionId}/participants?week=${weekStart} ~ ${weekEnd}`,
       },
@@ -105,68 +105,97 @@ export function SessionParticipantsScreen({
   };
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-4 ">
-        <BackNavBar />
-        <div>
-          {!isTodayInWeek && (
-            <KakaoShareButton
-              onClick={handleShare}
-              label="현황 결과 공유하기"
-            />
-          )}
-        </div>
+    <PageLayout>
+      <div className="flex items-center justify-between">
+        <BackNavBar title="주간 운동 현황" />
       </div>
-      <div className="flex items-center gap-2 mb-4">
-        <h2 className="text-lg font-bold">주간 운동 현황</h2>
+
+      {/* Week selector */}
+      <div className="flex items-center justify-between gap-2">
         {weeksLoading ? (
-          <span className="text-gray-400 text-sm">주차 불러오는 중...</span>
+          <span className="text-muted-foreground text-sm">불러오는 중...</span>
         ) : weeksError ? (
-          <span className="text-red-400 text-sm">
-            주차 정보를 불러올 수 없습니다.
+          <span className="text-destructive text-sm">
+            주차 정보를 불러올 수 없습니다
           </span>
         ) : (
-          <select
-            className="border rounded px-2 py-1 text-sm"
-            value={selectedWeek}
-            onChange={handleChange}
-          >
-            {weekRanges.map((range) => (
-              <option key={range} value={range}>
-                {range}
-              </option>
-            ))}
-          </select>
+          <div className="relative flex-1">
+            <CalendarDaysIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+            <select
+              className="w-full appearance-none bg-muted/50 border border-border rounded-xl pl-9 pr-8 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-ring"
+              value={selectedWeek}
+              onChange={(e) => setSelectedWeek(e.target.value)}
+            >
+              {weekRanges.map((range) => (
+                <option key={range} value={range}>
+                  {range}
+                </option>
+              ))}
+            </select>
+            <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+          </div>
+        )}
+        {!isTodayInWeek && participants && participants.length > 0 && (
+          <KakaoShareButton onClick={handleShare} label="공유" />
         )}
       </div>
+
+      {/* Participants cards */}
       {isLoading ? (
-        <div className="py-8 text-center text-gray-500">로딩 중...</div>
-      ) : error ? (
-        <div className="py-8 text-center text-red-500">
-          데이터를 불러오지 못했습니다.
+        <div className="py-12 text-center text-muted-foreground text-sm">
+          로딩 중...
         </div>
-      ) : (
-        <>
-          <table className="min-w-full border text-center">
-            <thead>
-              <tr>
-                <th className="border px-2 py-1">이름</th>
-                {days.map((day) => (
-                  <th key={day} className="border px-2 py-1">
-                    {day}
-                  </th>
-                ))}
-                <th className="border px-2 py-1">목표 달성</th>
-                <th className="border px-2 py-1">벌금</th>
-              </tr>
-            </thead>
-            <tbody>
-              {participants && participants.length > 0 ? (
-                participants.map((p) => (
-                  <tr key={p.id}>
-                    <td className="border px-2 py-1 font-medium">{p.name}</td>
-                    {p.authPerDay.map((didAuth, idx) => {
-                      // weekStart 기준 idx번째 요일의 날짜 계산
+      ) : error ? (
+        <div className="py-12 text-center text-destructive text-sm">
+          데이터를 불러오지 못했습니다
+        </div>
+      ) : participants && participants.length > 0 ? (
+        <div className="space-y-3">
+          {participants.map((p) => {
+            const isSuccess = p.success === "성공";
+            const isFailed = p.success === "실패";
+            return (
+              <Card key={p.id}>
+                <CardContent className="p-4 space-y-3">
+                  {/* Name & status */}
+                  <div className="flex items-center justify-between">
+                    <button
+                      className="font-semibold text-sm flex items-center gap-1.5 cursor-pointer hover:text-primary transition-colors"
+                      onClick={() => setSelectedUserId(p.id)}
+                    >
+                      {p.name}
+                      {selectedUserId === p.id && (
+                        <ImageIcon className="w-3.5 h-3.5 text-primary" />
+                      )}
+                    </button>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium tabular-nums">
+                        {p.done}/{p.goal}
+                      </span>
+                      {isSuccess && (
+                        <Badge
+                          variant="default"
+                          className="text-[10px] bg-emerald-500 hover:bg-emerald-600"
+                        >
+                          성공
+                        </Badge>
+                      )}
+                      {isFailed && (
+                        <Badge variant="destructive" className="text-[10px]">
+                          실패 ({p.fine.toLocaleString()}원)
+                        </Badge>
+                      )}
+                      {!isSuccess && !isFailed && (
+                        <Badge variant="secondary" className="text-[10px]">
+                          진행중
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Day-by-day grid */}
+                  <div className="grid grid-cols-7 gap-1">
+                    {days.map((day, idx) => {
                       const cellDate = format(
                         new Date(
                           new Date(weekStart).getTime() +
@@ -175,68 +204,55 @@ export function SessionParticipantsScreen({
                         "yyyy-MM-dd"
                       );
                       const today = format(new Date(), "yyyy-MM-dd");
-                      if (cellDate >= today && !didAuth) {
-                        return (
-                          <td
-                            key={idx}
-                            className="border px-2 py-1 text-gray-400"
-                          >
-                            -
-                          </td>
-                        );
-                      }
+                      const didAuth = p.authPerDay[idx];
+                      const isFuture = cellDate >= today && !didAuth;
+
                       return (
-                        <td key={idx} className="border px-2 py-1">
-                          {didAuth ? (
-                            <CheckIcon className="w-4 h-4 text-green-500" />
-                          ) : (
-                            <XIcon className="w-4 h-4 text-red-500" />
-                          )}
-                        </td>
+                        <div key={idx} className="flex flex-col items-center gap-1">
+                          <span className="text-[10px] text-muted-foreground font-medium">
+                            {day}
+                          </span>
+                          <div
+                            className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                              didAuth
+                                ? "bg-emerald-50 text-emerald-600"
+                                : isFuture
+                                  ? "bg-muted/30 text-muted-foreground/30"
+                                  : "bg-red-50 text-red-400"
+                            }`}
+                          >
+                            {didAuth ? (
+                              <CheckCircle2Icon className="w-4 h-4" />
+                            ) : isFuture ? (
+                              <span className="text-xs">-</span>
+                            ) : (
+                              <XCircleIcon className="w-4 h-4" />
+                            )}
+                          </div>
+                        </div>
                       );
                     })}
-                    <td className="border px-2 py-1 font-semibold">
-                      <div className="flex flex-col items-center gap-1">
-                        <span className="text-sm">
-                          {p.done}/{p.goal}
-                        </span>
-                        <span
-                          className="text-xs"
-                          style={{
-                            color:
-                              p.success === "성공"
-                                ? "green"
-                                : p.success === "실패"
-                                ? "red"
-                                : "gray",
-                          }}
-                        >
-                          {p.success}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="border px-2 py-1 font-semibold">
-                      {p.success === "실패" && p.fine > 0
-                        ? `${p.fine.toLocaleString()}원`
-                        : "-"}
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={days.length + 3} className="py-8 text-gray-400">
-                    참가자가 없습니다.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-          {/* 참가자별 인증 이력 캐러셀 */}
-          <div className="mt-8">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="font-semibold">참가자 인증 이력</span>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="py-12 text-center text-muted-foreground text-sm">
+          참가자가 없습니다
+        </div>
+      )}
+
+      {/* Auth history carousel */}
+      {selectedUserId && (
+        <Card>
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <ImageIcon className="w-4 h-4 text-primary" />
+              <h3 className="text-sm font-semibold">인증 이력</h3>
               <select
-                className="border rounded px-2 py-1 text-sm"
+                className="ml-auto appearance-none bg-muted/50 border border-border rounded-lg px-2 py-1 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-ring"
                 value={selectedUserId}
                 onChange={(e) => setSelectedUserId(e.target.value)}
               >
@@ -248,44 +264,48 @@ export function SessionParticipantsScreen({
               </select>
             </div>
             {authLoading ? (
-              <div className="py-4 text-center text-gray-400">
-                이력 불러오는 중...
+              <div className="py-8 text-center text-muted-foreground text-sm">
+                불러오는 중...
               </div>
             ) : authError ? (
-              <div className="py-4 text-center text-red-400">
+              <div className="py-8 text-center text-destructive text-sm">
                 이력 조회 실패
               </div>
             ) : authHistory && authHistory.length > 0 ? (
-              <Carousel className="">
+              <Carousel className="w-full">
                 <CarouselContent>
                   {authHistory.map((item, idx) => (
                     <CarouselItem
                       key={idx}
-                      className="p-4 flex flex-col items-center gap-2"
+                      className="flex flex-col items-center gap-3 p-2"
                     >
-                      <div className="text-xs text-gray-500">{item.doneAt}</div>
+                      <Badge variant="outline" className="text-xs">
+                        {item.doneAt}
+                      </Badge>
                       {item.image && item.image.length > 0 && (
                         <div className="flex gap-2 flex-wrap justify-center">
                           {item.image.map((imgUrl, imgIdx) => (
                             <Image
                               key={imgIdx}
                               src={imgUrl}
-                              width={192}
-                              height={192}
+                              width={160}
+                              height={160}
                               alt="운동 인증 이미지"
-                              className="w-48 h-48 object-cover rounded border"
+                              className="w-36 h-36 object-cover rounded-xl border"
                             />
                           ))}
                         </div>
                       )}
-                      <div className="text-sm font-medium">
-                        {item.exercises?.join(", ")}
+                      <div className="text-center space-y-1">
+                        <p className="text-sm font-medium">
+                          {item.exercises?.join(", ")}
+                        </p>
+                        {item.memo && (
+                          <p className="text-xs text-muted-foreground">
+                            {item.memo}
+                          </p>
+                        )}
                       </div>
-                      {item.memo && (
-                        <div className="text-xs text-gray-400">
-                          메모: {item.memo}
-                        </div>
-                      )}
                     </CarouselItem>
                   ))}
                 </CarouselContent>
@@ -293,13 +313,13 @@ export function SessionParticipantsScreen({
                 <CarouselNext />
               </Carousel>
             ) : (
-              <div className="py-4 text-center text-gray-400">
-                인증 이력이 없습니다.
+              <div className="py-8 text-center text-muted-foreground text-sm">
+                인증 이력이 없습니다
               </div>
             )}
-          </div>
-        </>
+          </CardContent>
+        </Card>
       )}
-    </div>
+    </PageLayout>
   );
 }

@@ -1,4 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -20,6 +21,12 @@ import { useSessionDetail } from "@/hooks/session-detail/useSessionDetail";
 import { useExerciseAuth } from "@/hooks/useExerciseAuth";
 import { useKakaoShare } from "@/hooks/useKakaoShare";
 import { User } from "@supabase/supabase-js";
+import {
+  CameraIcon,
+  CheckCircle2Icon,
+  DumbbellIcon,
+  LoaderCircleIcon,
+} from "lucide-react";
 import { useState } from "react";
 import { FormProvider, useForm, useFormContext } from "react-hook-form";
 import { toast } from "sonner";
@@ -112,34 +119,35 @@ export default function ExerciseAuthModal({
         if (!v) handleClose();
       }}
     >
-      <DialogContent showCloseButton={false}>
+      <DialogContent showCloseButton={false} className="max-w-sm mx-auto">
         <DialogHeader>
-          <DialogTitle>오늘 운동 인증</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <DumbbellIcon className="w-5 h-5 text-primary" />
+            오늘 운동 인증
+          </DialogTitle>
         </DialogHeader>
-        <div className="p-6">
-          <FormProvider {...methods}>
-            {step === "form" ? (
-              myGoal && (
-                <ExerciseAuthFormStep
-                  exerciseOptions={myGoal.exercises.map((e) => ({
-                    label: e,
-                    value: e,
-                  }))}
-                  onSubmit={handleSubmit}
-                  onClose={handleClose}
-                  loading={loading}
-                />
-              )
-            ) : (
-              <ExerciseAuthDoneStep
+        <FormProvider {...methods}>
+          {step === "form" ? (
+            myGoal && (
+              <ExerciseAuthFormStep
+                exerciseOptions={myGoal.exercises.map((e) => ({
+                  label: e,
+                  value: e,
+                }))}
+                onSubmit={handleSubmit}
                 onClose={handleClose}
-                userName={user?.user_metadata.name}
-                submitted={submitted}
-                sessionId={sessionId}
+                loading={loading}
               />
-            )}
-          </FormProvider>
-        </div>
+            )
+          ) : (
+            <ExerciseAuthDoneStep
+              onClose={handleClose}
+              userName={user?.user_metadata.name}
+              submitted={submitted}
+              sessionId={sessionId}
+            />
+          )}
+        </FormProvider>
       </DialogContent>
     </Dialog>
   );
@@ -162,32 +170,41 @@ function ExerciseAuthFormStep({
   const photo: File[] = photoList ? Array.from(photoList) : [];
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      <h2 className="text-lg font-bold mb-4">오늘 운동 인증</h2>
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      {/* Photo upload */}
       <FormField
         control={control}
         name="photo"
         render={({ field }) => (
-          <FormItem className="mb-4">
-            <FormLabel>인증 사진</FormLabel>
+          <FormItem>
+            <FormLabel className="text-sm font-medium">인증 사진</FormLabel>
             <FormControl>
-              <Input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={(e) => {
-                  field.onChange(e.target.files);
-                }}
-              />
+              <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border rounded-xl p-4 cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-colors">
+                <CameraIcon className="w-6 h-6 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">
+                  {photo.length > 0
+                    ? `${photo.length}장 선택됨`
+                    : "사진을 선택하세요"}
+                </span>
+                <Input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                    field.onChange(e.target.files);
+                  }}
+                />
+              </label>
             </FormControl>
-            {photo && photo.length > 0 && (
-              <div className="mt-2 flex gap-2 flex-wrap">
+            {photo.length > 0 && (
+              <div className="flex gap-2 flex-wrap mt-2">
                 {photo.map((file, idx) => (
                   <img
                     key={idx}
                     src={URL.createObjectURL(file)}
                     alt="미리보기"
-                    className="w-24 h-24 object-contain rounded border"
+                    className="w-20 h-20 object-cover rounded-xl border"
                   />
                 ))}
               </div>
@@ -195,14 +212,16 @@ function ExerciseAuthFormStep({
           </FormItem>
         )}
       />
+
+      {/* Exercise checkboxes */}
       <FormField
         control={control}
         name="exercises"
         rules={{ required: "운동 종류를 선택하세요" }}
         render={() => (
-          <FormItem className="mb-4">
-            <FormLabel>운동 종류</FormLabel>
-            <div className="flex flex-col gap-2">
+          <FormItem>
+            <FormLabel className="text-sm font-medium">운동 종류</FormLabel>
+            <div className="flex flex-wrap gap-2 pt-1">
               {exerciseOptions.map((opt) => (
                 <FormField
                   key={opt.value}
@@ -211,42 +230,52 @@ function ExerciseAuthFormStep({
                   render={({ field }) => {
                     const checked = field.value?.includes(opt.value);
                     return (
-                      <FormItem className="flex items-center gap-2">
-                        <FormControl>
-                          <Checkbox
-                            checked={checked}
-                            onCheckedChange={(checked: boolean) => {
-                              if (checked) {
-                                field.onChange([...field.value, opt.value]);
-                              } else {
-                                field.onChange(
-                                  field.value.filter(
-                                    (v: string) => v !== opt.value
-                                  )
-                                );
-                              }
-                            }}
-                          />
-                        </FormControl>
-                        <FormLabel className="font-normal cursor-pointer">
-                          {opt.label}
-                        </FormLabel>
-                      </FormItem>
+                      <label
+                        className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm cursor-pointer transition-colors ${
+                          checked
+                            ? "border-primary bg-primary/5 text-primary font-medium"
+                            : "border-border bg-background text-foreground hover:bg-muted/50"
+                        }`}
+                      >
+                        <Checkbox
+                          checked={checked}
+                          className="hidden"
+                          onCheckedChange={(checked: boolean) => {
+                            if (checked) {
+                              field.onChange([...field.value, opt.value]);
+                            } else {
+                              field.onChange(
+                                field.value.filter(
+                                  (v: string) => v !== opt.value
+                                )
+                              );
+                            }
+                          }}
+                        />
+                        {opt.label}
+                      </label>
                     );
                   }}
                 />
               ))}
-              {/* 기타 항목 */}
+              {/* 기타 */}
               <FormField
                 control={control}
                 name="exercises"
                 render={({ field }) => {
                   const checked = field.value?.includes("etc");
                   return (
-                    <FormItem className="flex items-center gap-2">
-                      <FormControl>
+                    <>
+                      <label
+                        className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm cursor-pointer transition-colors ${
+                          checked
+                            ? "border-primary bg-primary/5 text-primary font-medium"
+                            : "border-border bg-background text-foreground hover:bg-muted/50"
+                        }`}
+                      >
                         <Checkbox
                           checked={checked}
+                          className="hidden"
                           onCheckedChange={(checked: boolean) => {
                             if (checked) {
                               field.onChange([...field.value, "etc"]);
@@ -257,21 +286,20 @@ function ExerciseAuthFormStep({
                             }
                           }}
                         />
-                      </FormControl>
-                      <FormLabel className="font-normal cursor-pointer">
                         기타
-                      </FormLabel>
+                      </label>
                       {checked && (
                         <FormField
                           control={control}
                           name="etc"
                           rules={{ required: "기타 운동명을 입력하세요" }}
                           render={({ field }) => (
-                            <FormItem className="ml-2 flex-1">
+                            <FormItem className="w-full">
                               <FormControl>
                                 <Input
                                   type="text"
                                   placeholder="직접 입력"
+                                  className="h-10"
                                   {...field}
                                 />
                               </FormControl>
@@ -280,7 +308,7 @@ function ExerciseAuthFormStep({
                           )}
                         />
                       )}
-                    </FormItem>
+                    </>
                   );
                 }}
               />
@@ -289,33 +317,38 @@ function ExerciseAuthFormStep({
           </FormItem>
         )}
       />
+
+      {/* Memo */}
       <FormField
         control={control}
         name="memo"
         render={({ field }) => (
-          <FormItem className="mb-4">
-            <FormLabel>메모</FormLabel>
+          <FormItem>
+            <FormLabel className="text-sm font-medium">메모</FormLabel>
             <FormControl>
-              <Input {...field} />
+              <Input placeholder="오늘 운동 한마디" className="h-10" {...field} />
             </FormControl>
           </FormItem>
         )}
       />
-      <DialogFooter>
-        <div className="flex gap-2">
-          <Button type="submit" className="flex-1" disabled={loading}>
-            인증하기
-          </Button>
-          <Button
-            type="button"
-            onClick={onClose}
-            className="flex-1"
-            variant="outline"
-            disabled={loading}
-          >
-            닫기
-          </Button>
-        </div>
+
+      <DialogFooter className="flex gap-2 pt-2">
+        <Button
+          type="button"
+          onClick={onClose}
+          variant="outline"
+          className="flex-1 h-11"
+          disabled={loading}
+        >
+          닫기
+        </Button>
+        <Button type="submit" className="flex-1 h-11" disabled={loading}>
+          {loading ? (
+            <LoaderCircleIcon className="w-4 h-4 animate-spin" />
+          ) : (
+            "인증하기"
+          )}
+        </Button>
       </DialogFooter>
     </form>
   );
@@ -340,61 +373,70 @@ function ExerciseAuthDoneStep({
     exercises: submitted.exercises,
     memo: submitted.memo,
     sessionId,
-    user: {
-      name: userName,
-    },
+    user: { name: userName },
   });
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-[200px] w-full">
-      <span className="text-2xl mb-4">🎉</span>
-      <div className="text-lg font-bold mb-2">인증이 완료되었습니다!</div>
-      <div className="w-full bg-gray-50 rounded p-3 mb-4 text-left">
-        <div className="mb-2">
-          <span className="font-semibold text-sm">운동 종류:</span>
-          <ul className="list-disc ml-5 text-sm mt-1">
+    <div className="flex flex-col items-center gap-4 py-2">
+      {/* Success indicator */}
+      <div className="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center">
+        <CheckCircle2Icon className="w-8 h-8 text-emerald-500" />
+      </div>
+      <p className="text-lg font-bold">인증 완료!</p>
+
+      {/* Summary */}
+      <div className="w-full bg-muted/50 rounded-xl p-4 space-y-3">
+        <div>
+          <p className="text-[11px] text-muted-foreground mb-1">운동 종류</p>
+          <div className="flex flex-wrap gap-1.5">
             {submitted.exercises.map((ex, i) => (
-              <li key={i}>{ex}</li>
+              <Badge key={i} variant="secondary" className="text-xs">
+                {ex}
+              </Badge>
             ))}
-          </ul>
+          </div>
         </div>
         {submitted.photo && submitted.photo.length > 0 && (
-          <div className="mt-2">
-            <span className="font-semibold text-sm block mb-1">인증 사진:</span>
+          <div>
+            <p className="text-[11px] text-muted-foreground mb-1">인증 사진</p>
             <div className="flex gap-2 flex-wrap">
               {submitted.photo.map((url, idx) => (
                 <img
                   key={idx}
                   src={url}
-                  alt="제출한 인증 사진"
-                  className="w-24 h-24 object-contain rounded border"
+                  alt="인증 사진"
+                  className="w-20 h-20 object-cover rounded-xl border"
                 />
               ))}
             </div>
           </div>
         )}
         {submitted.memo && (
-          <div className="mt-2">
-            <span className="font-semibold text-sm block mb-1">메모:</span>
-            <div className="text-sm">{submitted.memo}</div>
+          <div>
+            <p className="text-[11px] text-muted-foreground mb-0.5">메모</p>
+            <p className="text-sm">{submitted.memo}</p>
           </div>
         )}
       </div>
-      <Button
-        id="kakao-share-button"
-        type="button"
-        onClick={handleKakaoShare}
-        className="w-full py-2 rounded bg-[#FEE500] text-black font-semibold mb-2 border border-[#FEE500] hover:bg-[#ffe066] transition-colors"
-      >
-        카카오톡으로 공유하기
-      </Button>
-      <Button
-        type="button"
-        onClick={onClose}
-        variant="outline"
-        className="w-full"
-      >
-        닫기
-      </Button>
+
+      {/* Actions */}
+      <div className="w-full space-y-2">
+        <Button
+          type="button"
+          onClick={handleKakaoShare}
+          className="w-full h-11 bg-[#FEE500] text-black font-semibold hover:bg-[#FDD835] border-none"
+        >
+          카카오톡으로 공유하기
+        </Button>
+        <Button
+          type="button"
+          onClick={onClose}
+          variant="outline"
+          className="w-full h-11"
+        >
+          닫기
+        </Button>
+      </div>
     </div>
   );
 }

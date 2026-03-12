@@ -3,7 +3,7 @@
 import BackNavBar from "@/components/layout/BackNavBar";
 import PageLayout from "@/components/layout/PageLayout";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
@@ -14,7 +14,9 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useSessionJoinForm } from "@/hooks/useSessionJoinForm";
+import { DumbbellIcon } from "lucide-react";
 
 export function JoinSessionScreen({ sessionId }: { sessionId: number }) {
   const { form, onSubmit, EXERCISE_OPTIONS, isEtcChecked } =
@@ -22,12 +24,10 @@ export function JoinSessionScreen({ sessionId }: { sessionId: number }) {
 
   return (
     <PageLayout>
+      <BackNavBar title="합류한다잉!" />
+
       <Card>
-        <BackNavBar />
-        <CardHeader>
-          <h1 className="text-2xl font-bold mb-6 text-gray-800">합류한다잉!</h1>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="p-5">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
@@ -39,9 +39,17 @@ export function JoinSessionScreen({ sessionId }: { sessionId: number }) {
                 }}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>주당 몇회 운동할꺼야?</FormLabel>
+                    <FormLabel className="text-sm font-medium">
+                      주당 몇회 운동할꺼야?
+                    </FormLabel>
                     <FormControl>
-                      <Input type="number" min={1} max={7} {...field} />
+                      <Input
+                        type="number"
+                        min={1}
+                        max={7}
+                        className="h-11"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -54,8 +62,10 @@ export function JoinSessionScreen({ sessionId }: { sessionId: number }) {
                 rules={{ required: "운동 종류를 선택하세요" }}
                 render={() => (
                   <FormItem>
-                    <FormLabel>어떤 종류의 운동을 할꺼야?</FormLabel>
-                    <div className="flex flex-wrap gap-3">
+                    <FormLabel className="text-sm font-medium">
+                      어떤 종류의 운동을 할꺼야?
+                    </FormLabel>
+                    <div className="flex flex-wrap gap-2 pt-1">
                       {EXERCISE_OPTIONS.map((option) => (
                         <FormField
                           key={option.value}
@@ -64,67 +74,72 @@ export function JoinSessionScreen({ sessionId }: { sessionId: number }) {
                           render={({ field }) => {
                             const checked = field.value?.includes(option.value);
                             return (
-                              <FormItem className="flex items-center space-x-2">
-                                <FormControl>
-                                  <Checkbox
-                                    checked={checked}
-                                    onCheckedChange={(checked: boolean) => {
-                                      if (checked) {
-                                        field.onChange([
-                                          ...field.value,
-                                          option.value,
-                                        ]);
-                                      } else {
-                                        field.onChange(
-                                          field.value.filter(
-                                            (v: string) => v !== option.value
-                                          )
-                                        );
-                                      }
-                                    }}
-                                  />
-                                </FormControl>
-                                <FormLabel className="font-normal cursor-pointer">
-                                  {option.label}
-                                </FormLabel>
-                              </FormItem>
+                              <label
+                                className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm cursor-pointer transition-colors ${
+                                  checked
+                                    ? "border-primary bg-primary/5 text-primary font-medium"
+                                    : "border-border bg-background text-foreground hover:bg-muted/50"
+                                }`}
+                              >
+                                <Checkbox
+                                  checked={checked}
+                                  className="hidden"
+                                  onCheckedChange={(checked: boolean) => {
+                                    if (checked) {
+                                      field.onChange([
+                                        ...field.value,
+                                        option.value,
+                                      ]);
+                                    } else {
+                                      field.onChange(
+                                        field.value.filter(
+                                          (v: string) => v !== option.value
+                                        )
+                                      );
+                                    }
+                                  }}
+                                />
+                                {option.label}
+                              </label>
                             );
                           }}
                         />
                       ))}
-                      {/* 기타 옵션은 마지막에 하드코딩 */}
+                      {/* 기타 */}
                       <FormField
                         control={form.control}
                         name="exercises"
                         render={({ field }) => {
                           const checked = field.value?.includes("etc");
                           return (
-                            <FormItem className="flex items-center space-x-2">
-                              <FormControl>
-                                <Checkbox
-                                  checked={checked}
-                                  onCheckedChange={(checked: boolean) => {
-                                    if (checked) {
-                                      field.onChange([...field.value, "etc"]);
-                                    } else {
-                                      field.onChange(
-                                        field.value.filter(
-                                          (v: string) => v !== "etc"
-                                        )
-                                      );
-                                    }
-                                  }}
-                                />
-                              </FormControl>
-                              <FormLabel className="font-normal cursor-pointer">
-                                기타
-                              </FormLabel>
-                            </FormItem>
+                            <label
+                              className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm cursor-pointer transition-colors ${
+                                checked
+                                  ? "border-primary bg-primary/5 text-primary font-medium"
+                                  : "border-border bg-background text-foreground hover:bg-muted/50"
+                              }`}
+                            >
+                              <Checkbox
+                                checked={checked}
+                                className="hidden"
+                                onCheckedChange={(checked: boolean) => {
+                                  if (checked) {
+                                    field.onChange([...field.value, "etc"]);
+                                  } else {
+                                    field.onChange(
+                                      field.value.filter(
+                                        (v: string) => v !== "etc"
+                                      )
+                                    );
+                                  }
+                                }}
+                              />
+                              기타
+                            </label>
                           );
                         }}
                       />
                     </div>
-                    {/* 기타 체크 시 인풋 노출 */}
                     {isEtcChecked && (
                       <FormField
                         control={form.control}
@@ -132,10 +147,10 @@ export function JoinSessionScreen({ sessionId }: { sessionId: number }) {
                         rules={{ required: "기타 운동명을 입력하세요" }}
                         render={({ field }) => (
                           <FormItem className="mt-2">
-                            <FormLabel>기타 운동명</FormLabel>
                             <FormControl>
                               <Input
                                 placeholder="쉼표(,)로 여러 개 입력 가능"
+                                className="h-11"
                                 {...field}
                               />
                             </FormControl>
@@ -144,6 +159,7 @@ export function JoinSessionScreen({ sessionId }: { sessionId: number }) {
                         )}
                       />
                     )}
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -157,9 +173,17 @@ export function JoinSessionScreen({ sessionId }: { sessionId: number }) {
                 }}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>실패시 벌금(원)</FormLabel>
+                    <FormLabel className="text-sm font-medium">
+                      실패시 벌금(원)
+                    </FormLabel>
                     <FormControl>
-                      <Input type="number" min={0} step={1000} {...field} />
+                      <Input
+                        type="number"
+                        min={0}
+                        step={1000}
+                        className="h-11"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -171,11 +195,13 @@ export function JoinSessionScreen({ sessionId }: { sessionId: number }) {
                 name="notes"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>특이사항</FormLabel>
+                    <FormLabel className="text-sm font-medium">
+                      특이사항
+                    </FormLabel>
                     <FormControl>
-                      <textarea
-                        className="w-full min-h-[80px] border border-gray-200 rounded-lg px-3 py-2 focus:border-primary focus:ring-1 focus:ring-primary"
+                      <Textarea
                         placeholder="특이사항이 있다면 입력하세요"
+                        className="min-h-[80px] resize-none"
                         {...field}
                       />
                     </FormControl>
@@ -184,7 +210,8 @@ export function JoinSessionScreen({ sessionId }: { sessionId: number }) {
                 )}
               />
 
-              <Button type="submit" className="w-full">
+              <Button type="submit" className="w-full h-12 text-base font-semibold">
+                <DumbbellIcon className="w-5 h-5" />
                 세션 참가하기
               </Button>
             </form>
